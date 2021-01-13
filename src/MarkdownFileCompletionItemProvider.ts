@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { RefType, getRefAt } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
 import { NoteParser } from './NoteParser';
+import { debug } from 'console';
 
 class MarkdownFileCompletionItem extends vscode.CompletionItem {
   fsPath?: string;
@@ -24,7 +25,10 @@ export class MarkdownFileCompletionItemProvider implements vscode.CompletionItem
     _token: vscode.CancellationToken,
     context: vscode.CompletionContext
   ) {
+
     const ref = getRefAt(document, position);
+    console.debug(ref);
+
     switch (ref.type) {
       case RefType.Null:
         return [];
@@ -39,7 +43,7 @@ export class MarkdownFileCompletionItemProvider implements vscode.CompletionItem
           return item;
         });
       case RefType.WikiLink:
-        return (await NoteWorkspace.noteFiles()).map((f) => {
+        return (await NoteWorkspace.getFiles()).map((f) => {
           let kind = vscode.CompletionItemKind.File;
           let label = NoteWorkspace.wikiLinkCompletionForConvention(f, document);
           let item = new MarkdownFileCompletionItem(label, kind, f.fsPath);
@@ -51,12 +55,14 @@ export class MarkdownFileCompletionItemProvider implements vscode.CompletionItem
       default:
         return [];
     }
+
   }
 
   public async resolveCompletionItem(
     item: MarkdownFileCompletionItem,
     token: vscode.CancellationToken
   ): Promise<MarkdownFileCompletionItem> {
+    console.debug('here ok?');
     const fsPath = item.fsPath;
     if (fsPath) {
       let note = NoteParser.noteFromFsPath(fsPath);

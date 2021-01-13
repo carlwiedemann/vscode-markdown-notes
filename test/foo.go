@@ -8,6 +8,5 @@ func main() {
 	fmt.Println("hello world")
 }
 
-// How about a [#clutter#] tag
-// How about another [#clutter#] tag
-// This could be [#another#] tag
+// How about an [#alfa#] tag and a [#bravo#] tag
+// This could be [#charlie#] tag

@@ -19,20 +19,21 @@ export function activate(context: vscode.ExtensionContext) {
   //////////////
 
   // TODO: REMOVE
-  NoteWorkspace.overrideMarkdownWordPattern(); // still nec to get ../ to trigger suggestions in `relativePaths` mode
+  // NoteWorkspace.overrideMarkdownWordPattern(); // still nec to get ../ to trigger suggestions in `relativePaths` mode
 
-  // TODO: We should have a tag reference provider.
+  // References.
   context.subscriptions.push(
     vscode.languages.registerReferenceProvider(ds, new MarkdownReferenceProvider())
   );
 
-  // TODO: We should have a tag completion provider.
+  // Completion
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(ds, new MarkdownFileCompletionItemProvider())
   );
 
-  // This appears to be suggestion based.
+  // Observe changes to a document.
   vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
+    // We update the cache for the given path.
     NoteParser.updateCacheFor(e.document.uri.fsPath);
 
     if (NoteWorkspace.triggerSuggestOnReplacement()) {
@@ -44,6 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
       if (shouldSuggest) {
         vscode.commands.executeCommand('editor.action.triggerSuggest');
       }
+      console.debug('yes');
+    }
+    else {
+      console.debug('no');
     }
   });
 

@@ -4,7 +4,5 @@ const foo = () => {
   console.log('hello world');
 };
 
-// How about a [#clutter#] tag
-// How about another [#clutter#] tag
-
-// How about another [#stuff#] tag
+// How about an [#charlie#] tag and a [#delta#] tag
+// This could be [#echo#] tag

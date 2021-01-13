@@ -5,6 +5,7 @@ def foo
     puts 'hello world'
 end
 
-# How about a [#clutter#] tag
-# How about another [#clutter#] tag
-# How about another [#stuff#] tag
+# How about an [#bravo#] tag and a [#charlie#] tag
+# This could be [#delta#] tag
+# How about a [#foo#]
+# ok [#asdf#]

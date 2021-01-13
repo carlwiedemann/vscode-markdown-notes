@@ -38,7 +38,7 @@ export class Note {
   static fromData(data: string): Note {
     let note = new Note('NO_PATH');
     note.data = data;
-    note.parseData(false);
+    note.parse(false);
     return note;
   }
 
@@ -73,7 +73,7 @@ export class Note {
     });
   }
 
-  parseData(useCache = false) {
+  parse(useCache = false) {
     let that = this;
 
     // don't debug on blank data, only null|undefined
@@ -90,7 +90,6 @@ export class Note {
       return;
     }
 
-    // reset the refCandidates Array
     this.refCandidates = [];
 
     let lines = this.data.split(/\r?\n/);

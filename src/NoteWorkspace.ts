@@ -577,7 +577,7 @@ export class NoteWorkspace {
     });
   }
 
-  static async noteFiles(): Promise<Array<vscode.Uri>> {
+  static async getFiles(): Promise<Array<vscode.Uri>> {
     let files = await findNonIgnoredFiles('**/*');
     this.noteFileCache = files;
     return files;
@@ -586,4 +586,5 @@ export class NoteWorkspace {
   static noteFilesFromCache(): Array<vscode.Uri> {
     return this.noteFileCache;
   }
+
 }
