@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "clutter",
+  "injectionSelector": "L:comment",
+  "patterns": [
+    {
+      "match": "(\\[\\#)([^\\]]+)(\\#\\])",
+      "name": "clutter.injection.tag",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.tag"
+        },
+        "2": {
+          "name": "support.function.text.clutter.injection.tag.title"
+        },
+        "3": {
+          "name": "punctuation.definition.tag"
+        }
+      }
+    }
+  ],
+  "scopeName": "text.clutter.injection"
+}

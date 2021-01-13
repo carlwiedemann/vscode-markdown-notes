@@ -9,4 +9,9 @@
 - [[extension test mirror]]
 - [[extension-test-mirror.md]]
 
+[#clutter#]
+
+[#clutter]
+
+
 #tag #another_tag
