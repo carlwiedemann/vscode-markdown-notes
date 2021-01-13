@@ -69,6 +69,7 @@ export class NoteWorkspace {
   // Defining these as strings now, and then compiling them with accessor methods.
   // This will allow us to potentially expose these as settings.
   static _rxTagNoAnchors = '\\#[\\w\\-\\_]+'; // used to match tags that appear within lines
+
   static _rxTagWithAnchors = '^\\#[\\w\\-\\_]+$'; // used to match entire words
   static _rxWikiLink = '\\[\\[[^sep\\]]+(sep[^sep\\]]+)?\\]\\]'; // [[wiki-link-regex(|with potential pipe)?]] Note: "sep" will be replaced with pipedWikiLinksSeparator on compile
   static _rxTitle = '(?<=^( {0,3}#[^\\S\\r\\n]+)).+';
@@ -97,10 +98,7 @@ export class NoteWorkspace {
     previewShowFileExtension: false,
   };
   static DOCUMENT_SELECTOR = [
-    // { scheme: 'file', language: 'markdown' },
-    // { scheme: 'file', language: 'mdx' },
-    { language: 'markdown' },
-    { language: 'mdx' },
+    { scheme: 'file', language: '*' }
   ];
 
   // Cache object to store results from noteFiles() in order to provide a synchronous method to the preview renderer.
@@ -190,6 +188,11 @@ export class NoteWorkspace {
     // return /\#[\w\-\_]+/i; // used to match tags that appear within lines
     return new RegExp(this._rxTagNoAnchors, 'gi');
   }
+
+  static rxClutterTag(): RegExp {
+    return /\[\#[\w\-\_]+\#\]/gi;
+  }
+
   static rxTagWithAnchors(): RegExp {
     // NB: MUST have g flag to match multiple words per line
     // return /^\#[\w\-\_]+$/i; // used to match entire words
@@ -575,11 +578,7 @@ export class NoteWorkspace {
   }
 
   static async noteFiles(): Promise<Array<vscode.Uri>> {
-    let that = this;
-
-    // let files = await vscode.workspace.findFiles('**/*');
     let files = await findNonIgnoredFiles('**/*');
-    files = files.filter((f) => f.scheme == 'file' && f.path.match(that.rxFileExtensions()));
     this.noteFileCache = files;
     return files;
   }

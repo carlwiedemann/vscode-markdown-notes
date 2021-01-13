@@ -4,7 +4,7 @@
   "injectionSelector": "L:comment",
   "patterns": [
     {
-      "match": "(\\[\\#)([^\\]]+)(\\#\\])",
+      "match": "(\\[\\#)([^\\#]+)(\\#\\])",
       "name": "clutter.injection.tag",
       "captures": {
         "1": {

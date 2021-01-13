@@ -10,3 +10,4 @@ func main() {
 
 // How about a [#clutter#] tag
 // How about another [#clutter#] tag
+// This could be [#another#] tag

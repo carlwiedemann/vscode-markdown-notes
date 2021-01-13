@@ -1,7 +1,7 @@
 import 'jest';
 import { foo, NoteWorkspace, PipedWikiLinksSyntax, SlugifyMethod } from '../../NoteWorkspace';
 import { titleCaseFromFilename } from '../../utils';
-import { Note } from '../../NoteParser';
+import { Note } from "../../Note";
 import { RefType } from '../../Ref';
 // import { config } from 'process';
 
@@ -164,35 +164,35 @@ line1 word1 word2
 describe('Note', () => {
   test('Note._rawRangesForWord', () => {
     let w = {
-      word: 'test.md',
+      text: 'test.md',
       hasExtension: true,
       type: RefType.WikiLink,
       range: undefined,
     };
     let ranges;
-    ranges = Note.fromData(document)._rawRangesForWord(w);
+    ranges = Note.fromData(document)._getRawRefRanges(w);
     expect(ranges).toMatchObject([
       { start: { line: 2, character: 2 }, end: { line: 2, character: 13 } },
       { start: { line: 4, character: 0 }, end: { line: 4, character: 11 } },
     ]);
     w = {
-      word: 'tag',
+      text: 'tag',
       hasExtension: true,
       type: RefType.Tag,
       range: undefined,
     };
-    ranges = Note.fromData(document)._rawRangesForWord(w);
+    ranges = Note.fromData(document)._getRawRefRanges(w);
     expect(ranges).toMatchObject([
       { start: { line: 2, character: 15 }, end: { line: 2, character: 19 } },
       { start: { line: 6, character: 0 }, end: { line: 6, character: 4 } },
     ]);
     w = {
-      word: 'another_tag',
+      text: 'another_tag',
       hasExtension: true,
       type: RefType.Tag,
       range: undefined,
     };
-    ranges = Note.fromData(document)._rawRangesForWord(w);
+    ranges = Note.fromData(document)._getRawRefRanges(w);
     expect(ranges).toMatchObject([
       { start: { line: 2, character: 20 }, end: { line: 2, character: 32 } },
     ]);

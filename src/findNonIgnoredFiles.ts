@@ -4,22 +4,16 @@
 // https://github.com/microsoft/vscode/issues/48674
 import { workspace, Uri } from 'vscode';
 import { exec, ExecException } from 'child_process';
-// import applicationInsights from './telemetry';
 import { join } from 'path';
 
-export default async function findNonIgnoredFiles(
-  pattern: string,
-  checkGitIgnore = true
-): Promise<Uri[]> {
+export default async function findNonIgnoredFiles(pattern: string): Promise<Uri[]> {
   const exclude = [
     ...Object.keys((await workspace.getConfiguration('search', null).get('exclude')) || {}),
     ...Object.keys((await workspace.getConfiguration('files', null).get('exclude')) || {}),
   ].join(',');
 
   const uris = await workspace.findFiles(pattern, `{${exclude}}`);
-  if (!checkGitIgnore) {
-    return uris;
-  }
+
   return filterGitIgnored(uris);
 }
 

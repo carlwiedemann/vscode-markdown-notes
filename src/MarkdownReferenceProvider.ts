@@ -9,9 +9,6 @@ export class MarkdownReferenceProvider implements vscode.ReferenceProvider {
     context: vscode.ReferenceContext,
     token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.Location[]> {
-    // console.debug('MarkdownReferenceProvider.provideReferences');
-    const ref = getRefAt(document, position);
-    // debugRef(ref);
-    return NoteParser.search(ref);
+    return NoteParser.search(getRefAt(document, position));
   }
 }
