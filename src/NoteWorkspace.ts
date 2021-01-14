@@ -3,7 +3,7 @@ import { basename, dirname, isAbsolute, join, normalize, relative } from 'path';
 import { existsSync, writeFileSync } from 'fs';
 import findNonIgnoredFiles from './findNonIgnoredFiles';
 import { NoteParser } from './NoteParser';
-import { FileDataSource } from './FileDataSource';
+import { TagDataSource } from './TagDataSource';
 const GithubSlugger = require('github-slugger');
 const SLUGGER = new GithubSlugger();
 
@@ -131,7 +131,13 @@ export class NoteWorkspace {
   }
 
   static clutterTagFromText(text: string) {
-    return `[#${text}#]`;
+    // We use this formatting here so that we don't
+    // mistake this as a clutter tag itself :).
+    return `[` + `#${text}#` + `]`;
+  }
+
+  static innerTextFromFullText(fullText: string) {
+    return fullText.replace('[#', '').replace('#]', '');
   }
 
   static slugifyChar(): string {

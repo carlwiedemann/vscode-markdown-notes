@@ -9,14 +9,16 @@ export enum RefType {
 
 export interface Ref {
   type: RefType;
-  text: string;
+  fullText: string;
+  innerText: string;
   hasExtension: boolean | null;
   range: vscode.Range | undefined;
 }
 
 export const NULL_REF = {
   type: RefType.Null,
-  text: '',
+  fullText: '',
+  innerText: '',
   hasExtension: null,
   range: undefined,
 };
@@ -29,11 +31,14 @@ export function getRefAt(document: vscode.TextDocument, position: vscode.Positio
   let range: vscode.Range | undefined;
 
   range = document.getWordRangeAtPosition(position, NoteWorkspace.rxClutterTag());
+  let fullText = document.getText(range);
+  let innerText = NoteWorkspace.innerTextFromFullText(fullText);
 
   if (range) {
     return {
       type: RefType.Tag,
-      text: document.getText(range),
+      fullText: fullText,
+      innerText: innerText,
       hasExtension: false,
       range: range,
     };

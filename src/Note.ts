@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
-import { readFile } from 'fs';
+import * as fs from 'fs';
 import { Ref, RefType } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
 import { RawRange } from "./RawRange";
 import { RefCandidate } from "./RefCandidate";
-import { NoteParser } from './NoteParser';
-import { FileDataSource } from './FileDataSource';
+import { TagDataSource } from './TagDataSource';
 
 export class Note {
+
+  static useClutterCli: boolean = true;
 
   fsPath: string;
 
@@ -53,21 +54,21 @@ export class Note {
     // and we don't want to end up using the old parsed refCandidates
     // in the event that parseData(true) is called in the interim
     return new Promise((resolve, reject) => {
-      readFile(that.fsPath, (err, buffer) => {
+      fs.readFile(that.fsPath, (err, buffer) => {
         if (err) {
           reject(err);
         } else {
           // NB! Make sure to cast this to a string
           // otherwise, it will cause weird silent failures
           that.fileContents = `${buffer}`;
-          that.parse();
+          that._parse();
           resolve(that);
         }
       });
     });
   }
 
-  parse() {
+  _parse() {
     let that = this;
 
     // don't debug on blank data, only null|undefined
@@ -141,19 +142,25 @@ export class Note {
   static async getLocationsForRef(ref: Ref): Promise<vscode.Location[]> {
     let locations: vscode.Location[] = [];
 
-    let notes = await Note.getAllParsedNotes();
+    if (Note.useClutterCli) {
+      return TagDataSource.getAllRefLocations(ref);
+    }
+    else {
 
-    notes.map((note) => {
-      note.getRefRanges(ref).map((range) => {
-        locations.push(new vscode.Location(vscode.Uri.file(note.fsPath), range));
+      let notes = await Note.getAllParsedNotes();
+
+      notes.map((note) => {
+        note.getRefRanges(ref).map((range) => {
+          locations.push(new vscode.Location(vscode.Uri.file(note.fsPath), range));
+        });
       });
-    });
+    }
 
     return locations;
   }
 
   static async getAllParsedNotes(): Promise<Array<Note>> {
-    let files = await FileDataSource.getFiles();
+    let files = await TagDataSource.getFiles();
 
     let notes = files.map((file) => {
       return new Note(file.fsPath);

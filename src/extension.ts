@@ -4,7 +4,7 @@ import { ClutterTagReferenceProvider } from './ClutterTagReferenceProvider';
 import { ClutterTagCompletionItemProvider } from './ClutterTagCompletionItemProvider';
 import { NoteWorkspace } from './NoteWorkspace';
 import { NoteParser } from './NoteParser';
-import { FileDataSource } from './FileDataSource';
+import { TagDataSource } from './TagDataSource';
 
 export function activate(context: vscode.ExtensionContext) {
 

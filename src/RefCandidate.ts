@@ -25,7 +25,7 @@ export class RefCandidate {
   };
 
   matchesRef(ref: Ref): boolean {
-    return this.text == ref.text;
+    return this.text == ref.fullText;
   }
 
 }

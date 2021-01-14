@@ -3,7 +3,7 @@ import { Ref, RefType } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
 import { Note } from './Note';
 import { Dictionary } from './Dictionary';
-import { FileDataSource } from './FileDataSource';
+import { TagDataSource } from './TagDataSource';
 
 export class NoteParser {
   // mapping of file fsPaths to Note objects
@@ -13,7 +13,8 @@ export class NoteParser {
     let ref: Ref = {
       type: RefType.WikiLink,
       hasExtension: true,
-      text: fileBasename,
+      fullText: fileBasename,
+      innerText: 'munge',
       range: undefined,
     };
     return Note.getLocationsForRef(ref);
