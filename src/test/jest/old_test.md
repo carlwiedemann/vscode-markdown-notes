@@ -299,7 +299,7 @@ describe('NoteWorkspace.newNoteContent', () => {
     setConfig({
       newNoteTemplate: template,
     });
-    return NoteWorkspace.newNoteContent(title);
+    // return NoteWorkspace.newNoteContent(title);
   };
 
   it('handles noteName tag', () => {

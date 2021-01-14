@@ -4,18 +4,14 @@ import { Ref, RefType } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
 import { RawRange } from "./RawRange";
 import { RefCandidate } from "./RefCandidate";
-
-// Caches the results of reading and parsing a TextDocument
-// into an in-memory index,
-// so we don't have to re-parse the file
-// every time we want to get the locations of
-// the Tags and WikiLinks in it
+import { NoteParser } from './NoteParser';
+import { FileDataSource } from './FileDataSource';
 
 export class Note {
 
   fsPath: string;
 
-  data: string | undefined;
+  fileContents: string | undefined;
 
   refCandidates: Array<RefCandidate> = [];
 
@@ -25,8 +21,6 @@ export class Note {
     contextLine: number; // line number after all empty lines
   } | undefined;
 
-  private _parsed: boolean = false;
-
   constructor(fsPath: string) {
     this.fsPath = fsPath;
   }
@@ -35,30 +29,29 @@ export class Note {
   // when we don't want to actually parse something
   // from the filesystem.
   // Won't fail because the init does not do anything with fsPath
-  static fromData(data: string): Note {
-    let note = new Note('NO_PATH');
-    note.data = data;
-    note.parse(false);
-    return note;
-  }
+  // static fromData(data: string): Note {
+  //   let note = new Note('NO_PATH');
+  //   note.fileContents = data;
+  //   note.parse(false);
+  //   return note;
+  // }
 
   // read fsPath into this.data and return a
   // Promise that resolves to `this` Note instance.
   // Usage:
   // note.readFile().then(note => console.log(note.data));
-  readFile(useCache = false): Promise<Note> {
+  readFileAndParse(): Promise<Note> {
     let that = this;
     // if we are using the cache and cached data exists,
     // just resolve immediately without re-reading files
-    if (useCache && this.data) {
-      return new Promise((resolve) => {
-        resolve(that);
-      });
-    }
+    // if (useCache && this.data) {
+    //   return new Promise((resolve) => {
+    //     resolve(that);
+    //   });
+    // }
     // make sure we reset parsed to false because we are re-reading the file
     // and we don't want to end up using the old parsed refCandidates
     // in the event that parseData(true) is called in the interim
-    this._parsed = false;
     return new Promise((resolve, reject) => {
       readFile(that.fsPath, (err, buffer) => {
         if (err) {
@@ -66,52 +59,47 @@ export class Note {
         } else {
           // NB! Make sure to cast this to a string
           // otherwise, it will cause weird silent failures
-          that.data = `${buffer}`;
+          that.fileContents = `${buffer}`;
+          that.parse();
           resolve(that);
         }
       });
     });
   }
 
-  parse(useCache = false) {
+  parse() {
     let that = this;
 
     // don't debug on blank data, only null|undefined
-    if (this.data === '') {
+    if (this.fileContents === '') {
       return;
     }
 
-    if (!this.data) {
+    if (!this.fileContents) {
       console.debug(`RefCandidate.parseData: no data for ${this.fsPath}`);
-      return;
-    }
-
-    if (useCache && this._parsed) {
       return;
     }
 
     this.refCandidates = [];
 
-    let lines = this.data.split(/\r?\n/);
+    let lines = this.fileContents.split(/\r?\n/);
 
     lines.map((line, lineNum) => {
       Array.from(line.matchAll(NoteWorkspace.rxClutterTag())).map((match) => {
         that.refCandidates.push(RefCandidate.fromMatch(lineNum, match));
       });
     });
-
-    this._parsed = true;
   }
 
   // NB: assumes this.parseData MUST have been called BEFORE running
   _getRawRefRanges(ref: Ref): Array<RawRange> {
 
     // don't debug on blank data, only null|undefined
-    if (this.data === '') {
+    if (this.fileContents === '') {
       return [];
     }
 
-    if (!this.data || !this.refCandidates) {
+    if (!this.fileContents || !this.refCandidates) {
       console.debug(
         'rangesForWordInDocumentData called with when !this.data || !this.refCandidates'
       );
@@ -150,25 +138,42 @@ export class Note {
     return _tagSet;
   }
 
-  // completionItem.documentation ()
-  documentation(): string | vscode.MarkdownString | undefined {
-    if (this.data === undefined) {
-      return "";
-    } else {
-      let data = this.data;
-      if (this.title) { // get the portion of the note after the title
-        data = this.data.split(/\r?\n/).slice(this.title.contextLine + 1).join('\n');
-      }
-      if (NoteWorkspace.compileSuggestionDetails()) {
-        try {
-          let result = new vscode.MarkdownString(data);
-          return result;
-        } catch (error) {
-          return "";
-        }
-      } else {
-        return data;
-      }
-    }
+  static async getLocationsForRef(ref: Ref): Promise<vscode.Location[]> {
+    let locations: vscode.Location[] = [];
+
+    let notes = await Note.getAllParsedNotes();
+
+    notes.map((note) => {
+      note.getRefRanges(ref).map((range) => {
+        locations.push(new vscode.Location(vscode.Uri.file(note.fsPath), range));
+      });
+    });
+
+    return locations;
   }
+
+  static async getAllParsedNotes(): Promise<Array<Note>> {
+    let files = await FileDataSource.getFiles();
+
+    let notes = files.map((file) => {
+      return new Note(file.fsPath);
+    });
+
+    return (await Promise.all(notes.map((note) => {
+      return note.readFileAndParse();
+    })));
+  }
+
+  static async getDistictTagStrings(): Promise<Array<string>> {
+    let _tags: Array<string> = [];
+
+    await Note.getAllParsedNotes().then((notes) => {
+      notes.map((note) => {
+        _tags = _tags.concat(Array.from(note.tagSet()));
+      });
+    });
+
+    return Array.from(new Set(_tags));
+  }
+
 }

@@ -3,6 +3,7 @@ import { basename, dirname, isAbsolute, join, normalize, relative } from 'path';
 import { existsSync, writeFileSync } from 'fs';
 import findNonIgnoredFiles from './findNonIgnoredFiles';
 import { NoteParser } from './NoteParser';
+import { FileDataSource } from './FileDataSource';
 const GithubSlugger = require('github-slugger');
 const SLUGGER = new GithubSlugger();
 
@@ -101,9 +102,6 @@ export class NoteWorkspace {
   static DOCUMENT_SELECTOR = [
     { scheme: 'file', language: '*' }
   ];
-
-  // Cache object to store results from noteFiles() in order to provide a synchronous method to the preview renderer.
-  static noteFileCache: vscode.Uri[] = [];
 
   static cfg(): Config {
     let c = vscode.workspace.getConfiguration('vscodeMarkdownNotes');
@@ -225,32 +223,6 @@ export class NoteWorkspace {
     return new RegExp(this._rxFileExtensions, 'i');
   }
 
-  static wikiLinkCompletionForConvention(
-    uri: vscode.Uri,
-    fromDocument: vscode.TextDocument
-  ): string {
-    if (this.useUniqueFilenames()) {
-      let filename = basename(uri.fsPath);
-      let c = this.cfg().noteCompletionConvention;
-      return this._wikiLinkCompletionForConvention(c, filename);
-    } else {
-      let toPath = uri.fsPath;
-      let fromDir = dirname(fromDocument.uri.fsPath.toString());
-      let rel = normalize(relative(fromDir, toPath));
-      return rel;
-    }
-  }
-
-  static _wikiLinkCompletionForConvention(convention: string, filename: string): string {
-    if (convention == 'toSpaces') {
-      return this.stripExtension(filename).replace(/[-_]+/g, ' ');
-    } else if (convention == 'noExtension') {
-      return this.stripExtension(filename);
-    } else {
-      return filename;
-    }
-  }
-
   static useUniqueFilenames(): boolean {
     // return false;
     return this.cfg().workspaceFilenameConvention == 'uniqueFilenames';
@@ -262,121 +234,6 @@ export class NoteWorkspace {
 
   static compileSuggestionDetails(): boolean {
     return this.cfg().compileSuggestionDetails;
-  }
-
-  static stripExtension(noteName: string): string {
-    return noteName.replace(NoteWorkspace.rxFileExtensions(), '');
-  }
-
-  static normalizeNoteNameForFuzzyMatch(noteName: string): string {
-    // remove the brackets:
-    let n = noteName.replace(/[\[\]]/g, '');
-    // remove the filepath:
-    // NB: this may not work with relative paths?
-    n = basename(n);
-    // remove the extension:
-    n = this.stripExtension(n);
-    // slugify (to normalize spaces)
-    n = this.slugifyTitle(n);
-    return n;
-  }
-
-  static cleanPipedWikiLink(noteName: string): string {
-    // Check whether or not we should remove the description
-
-    if (NoteWorkspace.allowPipedWikiLinks()) {
-      let separator: string = NoteWorkspace.pipedWikiLinksSeparator();
-      let captureGroup = '[^\\[' + separator + ']+';
-      let regex: RegExp;
-
-      if (NoteWorkspace.pipedWikiLinksSyntax() == 'file|desc') {
-        // Should capture the "|desc" at the end of a wiki-link
-        regex = new RegExp(separator + captureGroup + '$');
-      } else {
-        // Should capture the "desc|" at the beginning of a wiki-link
-        regex = new RegExp('^' + captureGroup + separator);
-      }
-
-      noteName = noteName.replace(regex, ''); // Remove description from the end
-      return noteName;
-
-      // If piped wiki-links aren't used, don't alter the note name.
-    } else {
-      return noteName;
-    }
-  }
-
-  static normalizeNoteNameForFuzzyMatchText(noteName: string): string {
-    // remove the brackets:
-    let n = noteName.replace(/[\[\]]/g, '');
-    // remove the potential description:
-    n = this.cleanPipedWikiLink(n);
-    // remove the extension:
-    n = this.stripExtension(n);
-    // slugify (to normalize spaces)
-    n = this.slugifyTitle(n);
-    return n;
-  }
-
-  // Compare 2 wiki-links for a fuzzy match.
-  // In general, we expect
-  // `left` to be fsPath
-  // `right` to be the ref word [[wiki-link]]
-  static noteNamesFuzzyMatch(left: string, right: string): boolean {
-    return (
-      this.normalizeNoteNameForFuzzyMatch(left).toLowerCase() ==
-      this.normalizeNoteNameForFuzzyMatchText(right).toLowerCase()
-    );
-  }
-
-  static noteNamesFuzzyMatchText(left: string, right: string): boolean {
-    return (
-      this.normalizeNoteNameForFuzzyMatchText(left).toLowerCase() ==
-      this.normalizeNoteNameForFuzzyMatchText(right).toLowerCase()
-    );
-  }
-
-  static cleanTitle(title: string): string {
-    const caseAdjustedTitle = this.lowercaseNewNoteFilenames() ?
-      title.toLowerCase() :
-      title;
-
-    // removing trailing slug chars
-    return caseAdjustedTitle.replace(/[-_－＿ ]*$/g, '');
-  }
-
-  static slugifyClassic(title: string): string {
-    let t =
-      this.slugifyChar() == 'NONE'
-        ? title
-        : title.replace(/[!"\#$%&'()*+,\-./:;<=>?@\[\\\]^_‘{|}~\s]+/gi, this.slugifyChar()); // punctuation and whitespace to hyphens (or underscores)
-    return this.cleanTitle(t);
-  }
-
-  static slugifyGithub(title: string): string {
-    SLUGGER.reset(); // otherwise it will increment repeats with -1 -2 -3 etc.
-    return SLUGGER.slug(title);
-  }
-
-  static slugifyTitle(title: string): string {
-    if (this.slugifyMethod() == SlugifyMethod.classic) {
-      return this.slugifyClassic(title);
-    } else {
-      return this.slugifyGithub(title);
-    }
-  }
-
-  static noteFileNameFromTitle(title: string): string {
-    let t = this.slugifyTitle(title);
-    return t.match(this.rxFileExtensions()) ? t : `${t}.${this.defaultFileExtension()}`;
-  }
-
-  static showNewNoteInputBox() {
-    return vscode.window.showInputBox({
-      prompt:
-        "Enter a 'Title Case Name' to create `title-case-name.md` with '# Title Case Name' at the top.",
-      value: '',
-    });
   }
 
   static newTagFromSelection() {
@@ -397,111 +254,8 @@ export class NoteWorkspace {
       const edit = new vscode.WorkspaceEdit();
       edit.replace(originEditor.document.uri, originSelectionRange, NoteWorkspace.clutterTagFromText(text));
       vscode.workspace.applyEdit(edit);
-      NoteParser.updateCacheFor(originEditor.document.uri.fsPath);
+      // NoteParser.updateCacheFor(originEditor.document.uri.fsPath);
     }
-  }
-
-  static createNewNoteFile(noteTitle: string) {
-    let workspacePath = '';
-    if (vscode.workspace.workspaceFolders) {
-      workspacePath = vscode.workspace.workspaceFolders[0].uri.fsPath.toString();
-    }
-    const activeFile = vscode.window.activeTextEditor?.document;
-    let activePath = activeFile ? dirname(activeFile.uri.fsPath) : null;
-
-    let noteDirectory = this.newNoteDirectory();
-    // first handle the case where we try to use same dir as active note:
-    if (noteDirectory == this.NEW_NOTE_SAME_AS_ACTIVE_NOTE) {
-      if (activePath) {
-        noteDirectory = activePath;
-      } else {
-        vscode.window.showWarningMessage(
-          `Error. newNoteDirectory was NEW_NOT_SAME_AS_ACTIVE_NOTE but no active note directory found. Using WORKSPACE_ROOT.`
-        );
-        noteDirectory = this.NEW_NOTE_WORKSPACE_ROOT;
-      }
-    }
-    // next, handle a case where this is set to a custom path
-    if (noteDirectory != this.NEW_NOTE_WORKSPACE_ROOT) {
-      // If the noteDirectory was set from the current activePath,
-      // it will already be absolute.
-      // Also, might as well handle case where user has
-      // an absolute path in their settings.
-      if (!isAbsolute(noteDirectory)) {
-        noteDirectory = join(workspacePath, noteDirectory);
-      }
-      const dirExists = existsSync(noteDirectory);
-      if (!dirExists) {
-        vscode.window.showWarningMessage(
-          `Error. newNoteDirectory \`${noteDirectory}\` does not exist. Using WORKSPACE_ROOT.`
-        );
-        noteDirectory = this.NEW_NOTE_WORKSPACE_ROOT;
-      }
-    }
-    // need to recheck this in case we handled correctly above.
-    // on errors, we will have set to this value:
-    if (noteDirectory == this.NEW_NOTE_WORKSPACE_ROOT) {
-      noteDirectory = workspacePath;
-    }
-
-    const filename = NoteWorkspace.noteFileNameFromTitle(noteTitle);
-    const filepath = join(noteDirectory, filename);
-
-    const fileAlreadyExists = existsSync(filepath);
-    if (fileAlreadyExists) {
-      vscode.window.showWarningMessage(
-        `Error creating note, file at path already exists: ${filepath}`
-      );
-    } else {
-      // create the file if it does not exist
-      const contents = NoteWorkspace.newNoteContent(noteTitle);
-      writeFileSync(filepath, contents);
-    }
-
-    return {
-      filepath: filepath,
-      fileAlreadyExists: fileAlreadyExists,
-    };
-  }
-
-  static newNoteContent(noteName: string) {
-    const template = NoteWorkspace.newNoteTemplate();
-    const d = (new Date().toISOString().match(/(\d{4}-\d{2}-\d{2})/) || '')[0]; // "2020-08-25"
-    const t = new Date().toISOString(); // "2020-08-25T03:21:49.735Z"
-    const contents = template
-      .replace(/\\n/g, '\n')
-      .replace(/\$\{noteName\}/g, noteName)
-      .replace(/\$\{timestamp\}/g, t)
-      .replace(/\$\{date\}/g, d);
-    return contents;
-  }
-
-  static selectionReplacementContent(wikiLink: string, noteName: string) {
-    const template = NoteWorkspace.newNoteFromSelectionReplacementTemplate();
-    const contents = template
-      .replace(/\$\{wikiLink\}/g, wikiLink)
-      .replace(/\$\{noteName\}/g, noteName);
-
-    return contents;
-  }
-
-  static overrideMarkdownWordPattern() {
-    // console.debug('overrideMarkdownWordPattern');
-    this.DOCUMENT_SELECTOR.map((ds) => {
-      vscode.languages.setLanguageConfiguration(ds.language, {
-        wordPattern: this.rxMarkdownWordPattern(),
-      });
-    });
-  }
-
-  static async getFiles(): Promise<Array<vscode.Uri>> {
-    let files = await findNonIgnoredFiles('**/*');
-    this.noteFileCache = files;
-    return files;
-  }
-
-  static noteFilesFromCache(): Array<vscode.Uri> {
-    return this.noteFileCache;
   }
 
 }

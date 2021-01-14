@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { isRefStart } from './Ref';
 import { NoteParser } from './NoteParser';
+import { Note } from './Note';
 
-export class MarkdownFileCompletionItemProvider implements vscode.CompletionItemProvider {
+export class ClutterTagCompletionItemProvider implements vscode.CompletionItemProvider {
   public async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
 
     const start = isRefStart(document, position);
@@ -30,7 +31,7 @@ export class MarkdownFileCompletionItemProvider implements vscode.CompletionItem
 
       let range = new vscode.Range(position.translate(0, -2), position.translate(0, endTranslate));
 
-      return (await NoteParser.distinctTags()).map((t) => {
+      return (await Note.getDistictTagStrings()).map((t) => {
         let label = `${t}`; // cast to a string
         let item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Snippet);
         item.range = range;
