@@ -1,5 +1,5 @@
 {
-  //   "wordPattern": "([\\.\\w_]+)", // https://github.com/microsoft/vscode/issues/42649 - must do this in `activate`
+  "wordPattern": "\\[\\#([^\\#]+)\\#\\]",
   // symbols used as brackets
   "brackets": [
     ["[", "]"],

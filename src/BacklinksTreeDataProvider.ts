@@ -1,16 +1,17 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
 import { NoteParser } from './NoteParser';
+import { BacklinkItem } from './BacklinkItem';
+import { FileWithLocations } from './FileWithLocations';
 
-type FileWithLocations = {
-  file: string;
-  locations: vscode.Location[];
-};
 export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<BacklinkItem> {
+
   constructor(private workspaceRoot: string | null) {}
+
   _onDidChangeTreeData: vscode.EventEmitter<BacklinkItem> = new vscode.EventEmitter<BacklinkItem>();
+
   onDidChangeTreeData: vscode.Event<BacklinkItem> = this._onDidChangeTreeData.event;
+
   reload(): void {
     this._onDidChangeTreeData.fire();
   }
@@ -80,25 +81,34 @@ export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<Backli
   }
 
   getChildren(element?: BacklinkItem): Thenable<BacklinkItem[]> {
-    let f = vscode.window.activeTextEditor?.document.uri.fsPath;
-    if (!f) {
+
+    let fsPath = vscode.window.activeTextEditor?.document.uri.fsPath;
+
+    if (!fsPath) {
       // no activeTextEditor, so there can be no refs
       return Promise.resolve([]);
     }
+
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage('No refs in empty workspace');
       return Promise.resolve([]);
     }
-    let activeFilename = path.basename(f);
+
+    let activeFilename = path.basename(fsPath);
 
     // TOP LEVEL:
     // Parse the workspace into list of FilesWithLocations
     // Return 1 collapsible element per file
+
     if (!element) {
+      // What we really want to do is to parse the file for tags
+      // and show all the tags in the file
+
       return NoteParser.searchBacklinksFor(activeFilename).then((locations) => {
         let filesWithLocations = BacklinksTreeDataProvider.locationListToTree(locations);
         return filesWithLocations.map((fwl) => BacklinkItem.fromFileWithLocations(fwl));
       });
+
       // Given the collapsible elements,
       // return the children, 1 for each location within the file
     } else if (element && element.locations) {
@@ -109,74 +119,4 @@ export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<Backli
   }
 }
 
-class BacklinkItem extends vscode.TreeItem {
-  constructor(
-    public readonly label: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public locations?: vscode.Location[],
-    private location?: vscode.Location
-  ) {
-    super(label, collapsibleState);
-  }
 
-  // return the 1 collapsible Item for each file
-  // store the locations within that file to the .locations attribute
-  static fromFileWithLocations(fwl: FileWithLocations): BacklinkItem {
-    let label = fwl.file;
-    let cs = vscode.TreeItemCollapsibleState.Expanded;
-    return new BacklinkItem(label, cs, fwl.locations, undefined);
-  }
-
-  // items for the locations within files
-  static fromLocation(location: vscode.Location): BacklinkItem {
-    // location / range is 0-indexed, but editor lines are 1-indexed
-    let lineNum = location.range.start.line + 1;
-    let label = `${lineNum}:`; // path.basename(location.uri.fsPath);
-    let cs = vscode.TreeItemCollapsibleState.None;
-    return new BacklinkItem(label, cs, undefined, location);
-  }
-
-  get command(): vscode.Command | undefined {
-    if (this.location) {
-      return {
-        command: 'vscode.open',
-        arguments: [
-          this.location.uri,
-          {
-            preview: true,
-            selection: this.location.range,
-          },
-        ],
-        title: 'Open File',
-      };
-    }
-  }
-
-  get tooltip(): string {
-    return this.description;
-  }
-
-  get description(): string {
-    let d = ``;
-    if (this.location) {
-      let lines = (fs.readFileSync(this.location?.uri.fsPath) || '').toString().split(/\r?\n/);
-      let line = lines[this.location?.range.start.line];
-      // Look back 12 chars before the start of the reference.
-      // There is almost certainly a more elegant way to do this.
-      let s = this.location?.range.start.character - 12;
-      if (s < 20) {
-        s = 0;
-      }
-      return line.substr(s);
-    } else if (this.locations) {
-      d = `${this.locations?.length} References`;
-    }
-    return d;
-  }
-
-  get iconPath(): vscode.ThemeIcon | undefined {
-    // to leave more room for the ref text,
-    // don't use an icon for each line
-    return this.location ? undefined : new vscode.ThemeIcon('references');
-  }
-}

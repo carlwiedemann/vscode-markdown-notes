@@ -9,13 +9,16 @@ export class NoteParser {
   static _noteCacheMap: Dictionary<Note> = {};
 
   static async distinctTags(): Promise<Array<string>> {
-    let useCache = true;
+    // let useCache = true;
+    let useCache = false;
     let _tags: Array<string> = [];
-    await NoteParser.getWorkspaceParsedNotes(useCache).then((pfs) => {
-      pfs.map((note) => {
+
+    await NoteParser.getWorkspaceParsedNotes(useCache).then((notes) => {
+      notes.map((note) => {
         _tags = _tags.concat(Array.from(note.tagSet()));
       });
     });
+
     return Array.from(new Set(_tags));
   }
 
@@ -73,7 +76,8 @@ export class NoteParser {
   }
 
   static async search(ref: Ref): Promise<vscode.Location[]> {
-    let useCache = true;
+    // let useCache = true;
+    let useCache = false;
 
     let locations: vscode.Location[] = [];
 

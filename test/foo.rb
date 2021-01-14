@@ -7,5 +7,3 @@ end
 
 # How about an [#bravo#] tag and a [#charlie#] tag
 # This could be [#delta#] tag
-# How about a [#foo#]
-# ok [#asdf#]

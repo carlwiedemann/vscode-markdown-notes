@@ -21,6 +21,10 @@ export const NULL_REF = {
   range: undefined,
 };
 
+export function isRefStart(document: vscode.TextDocument, position: vscode.Position): boolean {
+  return document.getWordRangeAtPosition(position, NoteWorkspace.rxClutterTagStart()) ? true : false;
+}
+
 export function getRefAt(document: vscode.TextDocument, position: vscode.Position): Ref {
   let range: vscode.Range | undefined;
 

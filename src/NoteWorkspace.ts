@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { basename, dirname, isAbsolute, join, normalize, relative } from 'path';
 import { existsSync, writeFileSync } from 'fs';
 import findNonIgnoredFiles from './findNonIgnoredFiles';
+import { NoteParser } from './NoteParser';
 const GithubSlugger = require('github-slugger');
 const SLUGGER = new GithubSlugger();
 
@@ -131,6 +132,10 @@ export class NoteWorkspace {
     };
   }
 
+  static clutterTagFromText(text: string) {
+    return `[#${text}#]`;
+  }
+
   static slugifyChar(): string {
     return this.cfg().slugifyCharacter;
   }
@@ -150,7 +155,7 @@ export class NoteWorkspace {
   static newNoteFromSelectionReplacementTemplate(): string {
     return this.cfg().newNoteFromSelectionReplacementTemplate;
   }
-  
+
   static lowercaseNewNoteFilenames(): boolean {
     return this.cfg().lowercaseNewNoteFilenames;
   }
@@ -190,7 +195,11 @@ export class NoteWorkspace {
   }
 
   static rxClutterTag(): RegExp {
-    return /\[\#[\w\-\_]+\#\]/gi;
+    return /\[\#[^\#]+\#\]/gi;
+  }
+
+  static rxClutterTagStart(): RegExp {
+    return /\[\#/;
   }
 
   static rxTagWithAnchors(): RegExp {
@@ -328,12 +337,12 @@ export class NoteWorkspace {
   }
 
   static cleanTitle(title: string): string {
-    const caseAdjustedTitle = this.lowercaseNewNoteFilenames() ? 
-      title.toLowerCase() : 
+    const caseAdjustedTitle = this.lowercaseNewNoteFilenames() ?
+      title.toLowerCase() :
       title;
 
     // removing trailing slug chars
-    return caseAdjustedTitle.replace(/[-_－＿ ]*$/g, ''); 
+    return caseAdjustedTitle.replace(/[-_－＿ ]*$/g, '');
   }
 
   static slugifyClassic(title: string): string {
@@ -370,118 +379,26 @@ export class NoteWorkspace {
     });
   }
 
-  static newNote(context: vscode.ExtensionContext) {
-    // console.debug('newNote');
-    const inputBoxPromise = NoteWorkspace.showNewNoteInputBox();
-
-    inputBoxPromise.then(
-      (noteName) => {
-        if (noteName == null || !noteName || noteName.replace(/\s+/g, '') == '') {
-          // console.debug('Abort: noteName was empty.');
-          return false;
-        }
-        const { filepath, fileAlreadyExists } = NoteWorkspace.createNewNoteFile(noteName);
-
-        // open the file:
-        vscode.window
-          .showTextDocument(vscode.Uri.file(filepath), {
-            preserveFocus: false,
-            preview: false,
-          })
-          .then(() => {
-            // if we created a new file, place the selection at the end of the last line of the template
-            if (!fileAlreadyExists) {
-              let editor = vscode.window.activeTextEditor;
-              if (editor) {
-                const lineNumber = editor.document.lineCount;
-                const range = editor.document.lineAt(lineNumber - 1).range;
-                editor.selection = new vscode.Selection(range.end, range.end);
-                editor.revealRange(range);
-              }
-            }
-          });
-      },
-      (err) => {
-        vscode.window.showErrorMessage('Error creating new note.');
-      }
-    );
-  }
-
-  static newNoteFromSelection(context: vscode.ExtensionContext) {
+  static newTagFromSelection() {
     const originEditor = vscode.window.activeTextEditor;
 
     if (!originEditor) {
-      // console.debug('Abort: no active editor');
       return;
     }
+
     const { selection } = originEditor;
-    const noteContents = originEditor.document.getText(selection);
+    const text = originEditor.document.getText(selection);
     const originSelectionRange = new vscode.Range(selection.start, selection.end);
 
-    if (noteContents === '') {
-      vscode.window.showErrorMessage('Error creating note from selection: selection is empty.');
-      return;
+    if (text === '') {
+      vscode.window.showErrorMessage('Error creating tag from selection: selection is empty.');
     }
-    
-    // console.debug('newNote');
-    const inputBoxPromise = NoteWorkspace.showNewNoteInputBox();
-
-    inputBoxPromise.then(
-      (noteName) => {
-        if (noteName == null || !noteName || noteName.replace(/\s+/g, '') == '') {
-          // console.debug('Abort: noteName was empty.');
-          return false;
-        }
-        const { filepath, fileAlreadyExists } = NoteWorkspace.createNewNoteFile(noteName);
-        const destinationUri = vscode.Uri.file(filepath);
-
-        // open the file:
-        vscode.window
-          .showTextDocument(destinationUri, {
-            preserveFocus: false,
-            preview: false,
-          })
-          .then(() => {
-            if (!fileAlreadyExists) {
-              const destinationEditor = vscode.window.activeTextEditor;
-              if (destinationEditor) {
-                // Place the selection at the end of the last line of the template
-                const lineNumber = destinationEditor.document.lineCount;
-                const range = destinationEditor.document.lineAt(lineNumber - 1).range;
-                destinationEditor.selection = new vscode.Selection(range.end, range.end);
-                destinationEditor.revealRange(range);
-
-                // Insert the selected content in to the new file
-                destinationEditor.edit(edit => {
-                  if (destinationEditor) {
-                    if (range.start.character === range.end.character) {
-                      edit.insert(destinationEditor.selection.end, noteContents);
-                    } else {
-                      // If the last line is not empty, insert the note contents on a new line
-                      edit.insert(destinationEditor.selection.end, '\n\n' + noteContents);
-                    }
-                  }
-                });
-
-                // Replace the selected content in the origin file with a wiki-link to the new file
-                const edit = new vscode.WorkspaceEdit();
-                const wikiLink = NoteWorkspace.wikiLinkCompletionForConvention(destinationUri, originEditor.document);
-
-                edit.replace(
-                  originEditor.document.uri, 
-                  originSelectionRange, 
-                  NoteWorkspace.selectionReplacementContent(wikiLink, noteName)
-                );
-
-                vscode.workspace.applyEdit(edit);
-              }
-            }
-          });
-      },
-      (err) => {
-        vscode.window.showErrorMessage('Error creating new note.');
-      }
-    );
+    else {
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(originEditor.document.uri, originSelectionRange, NoteWorkspace.clutterTagFromText(text));
+      vscode.workspace.applyEdit(edit);
+      NoteParser.updateCacheFor(originEditor.document.uri.fsPath);
+    }
   }
 
   static createNewNoteFile(noteTitle: string) {
