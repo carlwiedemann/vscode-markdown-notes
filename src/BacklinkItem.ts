@@ -30,26 +30,24 @@ export class BacklinkItem extends vscode.TreeItem {
   }
 
   get command(): vscode.Command | undefined {
-    if (this.location) {
-      return {
-        command: 'vscode.open',
-        arguments: [
-          this.location.uri,
-          {
-            preview: true,
-            selection: this.location.range,
-          },
-        ],
-        title: 'Open File',
-      };
-    }
+    return {
+      command: 'clutter.insertTag',
+      arguments: [
+        this.label
+      ],
+      title: 'Insert Tag',
+    };
   }
 
-  get tooltip(): string {
+  get _tooltip(): string {
     return this.description;
   }
 
-  get description(): string {
+  get tooltip(): string {
+    return `Insert ${this.label} at cursor.`;
+  }
+
+  get _description(): string {
     let d = ``;
     if (this.location) {
       let lines = (fs.readFileSync(this.location?.uri.fsPath) || '').toString().split(/\r?\n/);
@@ -65,6 +63,10 @@ export class BacklinkItem extends vscode.TreeItem {
       d = `${this.locations?.length} References`;
     }
     return d;
+  }
+
+  get description(): string {
+    return this.label;
   }
 
   get iconPath(): vscode.ThemeIcon | undefined {

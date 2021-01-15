@@ -3,10 +3,12 @@ import * as path from 'path';
 import { NoteParser } from './NoteParser';
 import { BacklinkItem } from './BacklinkItem';
 import { FileWithLocations } from './FileWithLocations';
+import { TagDataSource } from './TagDataSource';
+import { Note } from './Note';
 
 export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<BacklinkItem> {
 
-  constructor(private workspaceRoot: string | null) {}
+  constructor(private workspaceRoot: string | null) { }
 
   _onDidChangeTreeData: vscode.EventEmitter<BacklinkItem> = new vscode.EventEmitter<BacklinkItem>();
 
@@ -80,7 +82,7 @@ export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<Backli
     });
   }
 
-  getChildren(element?: BacklinkItem): Thenable<BacklinkItem[]> {
+  _getChildren(element?: BacklinkItem): Thenable<BacklinkItem[]> {
 
     let fsPath = vscode.window.activeTextEditor?.document.uri.fsPath;
 
@@ -114,6 +116,24 @@ export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<Backli
     } else if (element && element.locations) {
       return Promise.resolve(element.locations.map((l) => BacklinkItem.fromLocation(l)));
     } else {
+      return Promise.resolve([]);
+    }
+  }
+
+  async getChildren(element?: BacklinkItem): Promise<BacklinkItem[]> {
+    console.debug(element);
+
+    if (!element) {
+      return Promise.resolve((await Note.getDistictTagFullTextStrings()).map((label) => {
+        let cs = vscode.TreeItemCollapsibleState.Expanded;
+        return new BacklinkItem(label, cs);
+      }));
+    }
+    else if (element) {
+      // return Promise.resolve([element]);
+      return Promise.resolve([]);
+    }
+    else {
       return Promise.resolve([]);
     }
   }

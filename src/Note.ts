@@ -90,8 +90,6 @@ export class Note {
       });
     });
 
-    console.debug(foundRefs);
-
     return foundRefs;
   }
 
