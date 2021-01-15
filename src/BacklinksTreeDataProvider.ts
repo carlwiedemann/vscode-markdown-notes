@@ -121,7 +121,6 @@ export class BacklinksTreeDataProvider implements vscode.TreeDataProvider<Backli
   }
 
   async getChildren(element?: BacklinkItem): Promise<BacklinkItem[]> {
-    console.debug(element);
 
     if (!element) {
       return Promise.resolve((await Note.getDistictTagFullTextStrings()).map((label) => {

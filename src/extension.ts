@@ -3,7 +3,6 @@ import { BacklinksTreeDataProvider } from './BacklinksTreeDataProvider';
 import { ClutterTagReferenceProvider } from './ClutterTagReferenceProvider';
 import { ClutterTagCompletionItemProvider } from './ClutterTagCompletionItemProvider';
 import { NoteWorkspace } from './NoteWorkspace';
-import { NoteParser } from './NoteParser';
 import { TagDataSource } from './TagDataSource';
 import { Note } from './Note';
 
