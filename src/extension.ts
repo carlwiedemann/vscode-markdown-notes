@@ -5,11 +5,13 @@ import {ClutterTagCompletionItemProvider} from './ClutterTagCompletionItemProvid
 import {NoteWorkspace} from './NoteWorkspace';
 import {TagDataSource} from './TagDataSource';
 import {Note} from './Note';
-import got = require('got');
+import got from 'got';
 
 export function activate(context: vscode.ExtensionContext) {
 
   const ds = NoteWorkspace.DOCUMENT_SELECTOR;
+  // Tree data provider.
+  const allTagsTreeDataProvider = new AllTagsTreeDataProvider();
 
   // References.
   context.subscriptions.push(
@@ -19,10 +21,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Completion
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(ds, new ClutterTagCompletionItemProvider(), '#')
-  );
-  // We should modify this to make it work for tags.
-  const backlinksTreeDataProvider = new AllTagsTreeDataProvider(
-    vscode.workspace.rootPath || null
   );
 
   // Hover
@@ -60,37 +58,29 @@ export function activate(context: vscode.ExtensionContext) {
     TagDataSource.registerTempRefs(e.document.uri.fsPath, parsed);
     // Clear refs on save/delete.
     if (parsed.length > 0) {
-      backlinksTreeDataProvider.reload();
+      allTagsTreeDataProvider.reload();
     }
   });
 
   // New note from selection command.
   context.subscriptions.push(vscode.commands.registerCommand('clutter.newTagFromSelection', NoteWorkspace.newTagFromSelection));
 
+  // Insert tag from tag tree view command.
   context.subscriptions.push(vscode.commands.registerCommand('clutter.insertTag', function (content: string) {
-    // Get the active text editor
     const editor = vscode.window.activeTextEditor;
-
     if (editor) {
-      // const document = editor.document;
-      const selection = editor.selection;
-
-      // Get the word within the selection
-      // const word = document.getText(selection);
-      // const reversed = word.split('').reverse().join('');
       editor.edit(editBuilder => {
-        // editBuilder.replace(selection, reversed);
-        editBuilder.insert(selection.start, content);
+        editBuilder.insert(editor.selection.start, content);
       });
     }
   }));
 
-  // NoteParser.hydrateCache();
-
-
-  vscode.window.onDidChangeActiveTextEditor(() => backlinksTreeDataProvider.reload());
-  const treeView = vscode.window.createTreeView('vscodeMarkdownNotesBacklinks', {
-    treeDataProvider: backlinksTreeDataProvider,
+  // Tag tree view.
+  vscode.window.createTreeView('vscodeMarkdownNotesBacklinks', {
+    treeDataProvider: allTagsTreeDataProvider,
+  });
+  vscode.window.onDidChangeActiveTextEditor(() => {
+    allTagsTreeDataProvider.reload();
   });
 
 }
