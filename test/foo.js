@@ -1,8 +1,6 @@
-// Ok here is some js
+// foo.js
 
-const foo = () => {
+// Saying hello.
+const main = () => {
   console.log('hello world');
 };
-
-// How about an [#charlie#] tag and a [#delta#] tag
-// This could be [#echo#] tag
