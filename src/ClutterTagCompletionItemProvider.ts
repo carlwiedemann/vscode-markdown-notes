@@ -31,7 +31,9 @@ export class ClutterTagCompletionItemProvider implements vscode.CompletionItemPr
 
       let range = new vscode.Range(position.translate(0, -2), position.translate(0, endTranslate));
 
-      return (await Note.getDistictTagStrings()).map((t) => {
+      let strings = await Note.getDistictTagFullTextStrings();
+
+      return strings.map((t) => {
         let label = `${t}`; // cast to a string
         let item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Snippet);
         item.range = range;

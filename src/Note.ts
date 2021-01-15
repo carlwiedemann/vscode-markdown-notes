@@ -171,16 +171,15 @@ export class Note {
     })));
   }
 
-  static async getDistictTagStrings(): Promise<Array<string>> {
-    let _tags: Array<string> = [];
+  static async getDistictTagFullTextStrings(): Promise<Array<string>> {
+    let tagStrings: Set<string> = new Set();
 
-    await Note.getAllParsedNotes().then((notes) => {
-      notes.map((note) => {
-        _tags = _tags.concat(Array.from(note.tagSet()));
-      });
+    let refs = await TagDataSource.getAllRefs();
+    refs.map((ref) => {
+      tagStrings.add(ref.fullText);
     });
 
-    return Array.from(new Set(_tags));
+    return Array.from(tagStrings);
   }
 
 }
