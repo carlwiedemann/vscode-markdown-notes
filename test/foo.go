@@ -1,14 +1,10 @@
-// Ok here is some go
+// foo.go
 
 package main
 
 import "fmt"
 
+// Saying hello.
 func main() {
 	fmt.Println("hello world")
 }
-
-// How about an [#alfa#] tag and a [#bravo#] tag
-// This could be [#charlie#] tag[]
-
-// How about a [#alfa#] tag?

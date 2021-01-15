@@ -1,9 +1,6 @@
-# Ok here is some rb
+# foo.rb
 
-
-def foo
+# Saying hello.
+def main
     puts 'hello world'
 end
-
-# How about an [#bravo#] tag and a [#charlie#] tag
-# This could be [#delta#] tag
