@@ -68,21 +68,21 @@ export class Note {
     });
   }
 
-  static parseString(data: string) {
+  static parseString(data: string): Array<RefCandidate> {
+
+    let foundRefs: Array<RefCandidate> = [];
 
     // don't debug on blank data, only null|undefined
     if (data === '') {
-      return;
+      return foundRefs;
     }
 
     if (!data) {
       console.debug(`empty data`);
-      return;
+      return foundRefs;
     }
 
     let lines = data.split(/\r?\n/);
-
-    let foundRefs: Array<RefCandidate> = [];
 
     lines.map((line, lineNum) => {
       Array.from(line.matchAll(NoteWorkspace.rxClutterTag())).map((match) => {
