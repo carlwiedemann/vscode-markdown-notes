@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { Note } from './Note';
 import { getRefAt } from './Ref';
+import {TagDataSource} from "./TagDataSource";
 
 export class ClutterTagReferenceProvider implements vscode.ReferenceProvider {
   public provideReferences(
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.ProviderResult<vscode.Location[]> {
-    return Note.getLocationsForRef(getRefAt(document, position));
+    return TagDataSource.getAllRefLocations(getRefAt(document, position));
   }
 }

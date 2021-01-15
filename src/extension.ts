@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+import {AllTagsTreeDataProvider} from './AllTagsTreeDataProvider';
+import {ClutterTagReferenceProvider} from './ClutterTagReferenceProvider';
+import {ClutterTagCompletionItemProvider} from './ClutterTagCompletionItemProvider';
+import {NoteWorkspace} from './NoteWorkspace';
+import {TagDataSource} from './TagDataSource';
+import {Note} from './Note';
 import got = require('got');
-import { BacklinksTreeDataProvider } from './BacklinksTreeDataProvider';
-import { ClutterTagReferenceProvider } from './ClutterTagReferenceProvider';
-import { ClutterTagCompletionItemProvider } from './ClutterTagCompletionItemProvider';
-import { NoteWorkspace } from './NoteWorkspace';
-import { TagDataSource } from './TagDataSource';
-import { Note } from './Note';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCompletionItemProvider(ds, new ClutterTagCompletionItemProvider(), '#')
   );
   // We should modify this to make it work for tags.
-  const backlinksTreeDataProvider = new BacklinksTreeDataProvider(
+  const backlinksTreeDataProvider = new AllTagsTreeDataProvider(
     vscode.workspace.rootPath || null
   );
 

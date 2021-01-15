@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Ref, RefType } from './Ref';
-import { NoteWorkspace } from './NoteWorkspace';
-import { RawRange } from "./RawRange";
-import { RefCandidate } from "./RefCandidate";
-import { TagDataSource } from './TagDataSource';
+import {Ref, RefType} from './Ref';
+import {NoteWorkspace} from './NoteWorkspace';
+import {RawRange} from "./RawRange";
+import {RefCandidate} from "./RefCandidate";
+import {TagDataSource} from './TagDataSource';
 
 export class Note {
 
@@ -165,23 +165,7 @@ export class Note {
   }
 
   static async getLocationsForRef(ref: Ref): Promise<vscode.Location[]> {
-    let locations: vscode.Location[] = [];
-
-    if (Note.useClutterCli) {
-      return TagDataSource.getAllRefLocations(ref);
-    }
-    else {
-
-      let notes = await Note.getAllParsedNotes();
-
-      notes.map((note) => {
-        note.getRefRanges(ref).map((range) => {
-          locations.push(new vscode.Location(vscode.Uri.file(note.fsPath), range));
-        });
-      });
-    }
-
-    return locations;
+    return TagDataSource.getAllRefLocations(ref);
   }
 
   static async getAllParsedNotes(): Promise<Array<Note>> {
@@ -197,14 +181,11 @@ export class Note {
   }
 
   static async getDistictTagFullTextStrings(): Promise<Array<string>> {
-    let tagStrings: Set<string> = new Set();
+    let tagSet = (await TagDataSource.getAllRefs()).reduce((carry: Set<string>, ref: Ref): Set<string> => {
+      return carry.add(ref.fullText);
+    }, new Set());
 
-    let refs = await TagDataSource.getAllRefs();
-    refs.map((ref) => {
-      tagStrings.add(ref.fullText);
-    });
-
-    return Array.from(tagStrings);
+    return Array.from(tagSet);
   }
 
 }
