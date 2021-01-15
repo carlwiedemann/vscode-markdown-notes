@@ -4,8 +4,12 @@ import * as path from 'path';
 import findNonIgnoredFiles from "./findNonIgnoredFiles";
 import { Ref, RefType } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
+import { RefCandidate } from './RefCandidate';
+import { Dictionary } from './Dictionary';
 
 export class TagDataSource {
+
+  static tempRefs: Dictionary<Array<RefCandidate>> = {};
 
   static getProjectRootUri(): string {
     let folders = vscode.workspace.workspaceFolders;
@@ -104,6 +108,28 @@ export class TagDataSource {
       }
     });
 
+    // Also push temp refs.
+    let refKeys = Object.keys(TagDataSource.tempRefs);
+    refKeys.forEach((key) => {
+      let refsForFile = TagDataSource.tempRefs[key];
+      refsForFile.forEach((refCandidate) => {
+
+        let rawRange = refCandidate.rawRange;
+        let range = new vscode.Range(
+          new vscode.Position(rawRange.start.line, rawRange.start.col),
+          new vscode.Position(rawRange.end.line, rawRange.end.col)
+        );
+
+        refs.push({
+          type: RefType.Tag,
+          fullText: refCandidate.text,
+          innerText: NoteWorkspace.innerTextFromFullText(refCandidate.text),
+          hasExtension: false,
+          range: range
+        });
+      });
+    });
+
     return refs;
   }
 
@@ -152,6 +178,10 @@ export class TagDataSource {
     });
 
     return locations;
+  }
+
+  static registerTempRefs(fsPath: string, refCandidates: Array<RefCandidate>) {
+    TagDataSource.tempRefs[fsPath] = refCandidates;
   }
 
 }

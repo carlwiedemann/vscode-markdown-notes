@@ -68,6 +68,33 @@ export class Note {
     });
   }
 
+  static parseString(data: string) {
+
+    // don't debug on blank data, only null|undefined
+    if (data === '') {
+      return;
+    }
+
+    if (!data) {
+      console.debug(`empty data`);
+      return;
+    }
+
+    let lines = data.split(/\r?\n/);
+
+    let foundRefs: Array<RefCandidate> = [];
+
+    lines.map((line, lineNum) => {
+      Array.from(line.matchAll(NoteWorkspace.rxClutterTag())).map((match) => {
+        foundRefs.push(RefCandidate.fromMatch(lineNum, match));
+      });
+    });
+
+    console.debug(foundRefs);
+
+    return foundRefs;
+  }
+
   _parse() {
     let that = this;
 

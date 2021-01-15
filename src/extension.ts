@@ -5,6 +5,7 @@ import { ClutterTagCompletionItemProvider } from './ClutterTagCompletionItemProv
 import { NoteWorkspace } from './NoteWorkspace';
 import { NoteParser } from './NoteParser';
 import { TagDataSource } from './TagDataSource';
+import { Note } from './Note';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -22,8 +23,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Observe changes to a document.
   vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-    // We update the cache for the given path.
-    // NoteParser.updateCacheFor(e.document.uri.fsPath);
+    let parsed = Note.parseString(e.document.getText());
+    TagDataSource.registerTempRefs(e.document.uri.fsPath, parsed);
+    // Clear refs on save/delete.
   });
 
   // New note from selection command.
