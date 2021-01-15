@@ -1,9 +1,18 @@
+# frozen_string_literal: true
+
 # Ok here is some rb
 
-
 def foo
-    puts 'hello world'
+  puts 'hello world'
 end
 
-# How about an [#bravo#] tag and a [#charlie#] tag
-# This could be [#delta#] tag
+def dummy_flagr_aa_test(candidate_id)
+  # This AA tests helps us validate flagr metrics
+  # It shouldn't introduce any side effect
+  # [#flagr:1#]
+  FlagrService.evaluate(
+    flag_id: 1, # https://flagr.checkrhq.net/#/flags/1
+    entity_id: candidate_id.to_s,
+    entity_type: 'candidate_int_id'
+  )
+end

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import got = require('got');
 import { BacklinksTreeDataProvider } from './BacklinksTreeDataProvider';
 import { ClutterTagReferenceProvider } from './ClutterTagReferenceProvider';
 import { ClutterTagCompletionItemProvider } from './ClutterTagCompletionItemProvider';
@@ -19,6 +20,35 @@ export function activate(context: vscode.ExtensionContext) {
   // Completion
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(ds, new ClutterTagCompletionItemProvider(), '#')
+  );
+
+  // Hover
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(ds, {
+      async provideHover(document, position, token) {
+        const line = document.lineAt(position.line);
+        const re = /\[#flagr:(.*)#\]/g;
+        const match = re.exec(line.text) || ['', ''];
+        const flagrId = match[1];
+        const flagrBaseURL = 'https://try-flagr.herokuapp.com/api/v1/flags';
+
+        if (flagrId != '') {
+          const res = await got(`${flagrBaseURL}/${flagrId}`);
+          const flag = JSON.parse(res.body);
+          const tooltip: vscode.MarkdownString = new vscode.MarkdownString(`
+|                  |                       |
+|------------------|-----------------------|
+| **Flag ID**      | ${flag.id}            |
+| **Enabled**      | ${flag.enabled}       |
+| **Key**          | ${flag.key}           |
+| **Description**  | ${flag.description}   |
+| **Updated At**   | ${flag.updatedAt}     |
+          `);
+          tooltip.isTrusted = true;
+          return new vscode.Hover(tooltip);
+        }
+      },
+    })
   );
 
   // Observe changes to a document.
