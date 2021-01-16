@@ -1,7 +1,6 @@
 import { exec, ExecException } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import findNonIgnoredFiles from "./findNonIgnoredFiles";
 import { Ref, RefType } from './Ref';
 import { NoteWorkspace } from './NoteWorkspace';
 import { RefCandidate } from './RefCandidate';
@@ -18,15 +17,6 @@ export class TagDataSource {
     }
     throw new Error();
   }
-
-  static async getFiles(): Promise<Array<vscode.Uri>> {
-    // @todo Pull from Clutter index file
-    return await findNonIgnoredFiles('**/*');
-  }
-
-  // static updateCacheFor(fsPath: string) {
-  //   new Note(fsPath).readFileAndParse();
-  // }
 
   static async getRawTagData(): Promise<string> {
 
@@ -73,8 +63,7 @@ export class TagDataSource {
       lines = allLines.filter((line) => {
         return line.indexOf(toMatch) === 0;
       });
-    }
-    else {
+    } else {
       lines = allLines;
     }
 
@@ -150,8 +139,7 @@ export class TagDataSource {
       lines = allLines.filter((line) => {
         return line.indexOf(toMatch) === 0;
       });
-    }
-    else {
+    } else {
       lines = allLines;
     }
 

@@ -1,30 +1,38 @@
 module.exports = {
   env: {
-    browser: true,
     es6: true,
-    node: true,
+    node: true
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    sourceType: 'module',
+    project: 'tsconfig.json',
+    sourceType: 'module'
   },
-  plugins: ['@typescript-eslint'],
+  plugins: [
+    '@typescript-eslint'
+  ],
   rules: {
-    indent: 'off',
-    '@typescript-eslint/indent': ['error', 2],
+    '@typescript-eslint/indent': [
+      'error',
+      'tab'
+    ],
     '@typescript-eslint/member-delimiter-style': [
       'error',
       {
         multiline: {
-          delimiter: 'semi',
-          requireLast: true,
+          'delimiter': 'semi',
+          'requireLast': true
         },
         singleline: {
-          delimiter: 'semi',
-          requireLast: false,
-        },
-      },
+          'delimiter': 'semi',
+          'requireLast': false
+        }
+      }
     ],
-    '@typescript-eslint/semi': ['error', 'always'],
-  },
+    '@typescript-eslint/semi': [
+      'error',
+      'always'
+    ],
+    indent: 'off'
+  }
 };

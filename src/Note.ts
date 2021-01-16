@@ -168,18 +168,6 @@ export class Note {
     return TagDataSource.getAllRefLocations(ref);
   }
 
-  static async getAllParsedNotes(): Promise<Array<Note>> {
-    let files = await TagDataSource.getFiles();
-
-    let notes = files.map((file) => {
-      return new Note(file.fsPath);
-    });
-
-    return (await Promise.all(notes.map((note) => {
-      return note.readFileAndParse();
-    })));
-  }
-
   static async getDistictTagFullTextStrings(): Promise<Array<string>> {
     let tagSet = (await TagDataSource.getAllRefs()).reduce((carry: Set<string>, ref: Ref): Set<string> => {
       return carry.add(ref.fullText);

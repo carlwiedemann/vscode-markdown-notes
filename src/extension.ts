@@ -5,27 +5,33 @@ import {ClutterTagCompletionItemProvider} from './ClutterTagCompletionItemProvid
 import {NoteWorkspace} from './NoteWorkspace';
 import {TagDataSource} from './TagDataSource';
 import {Note} from './Note';
-import got from 'got';
+import * as got from 'got';
 
 export function activate(context: vscode.ExtensionContext) {
 
-  const ds = NoteWorkspace.DOCUMENT_SELECTOR;
+  const documentSelector = [
+    {
+      scheme: 'file',
+      language: '*'
+    }
+  ];
+
   // Tree data provider.
   const allTagsTreeDataProvider = new AllTagsTreeDataProvider();
 
   // References.
   context.subscriptions.push(
-    vscode.languages.registerReferenceProvider(ds, new ClutterTagReferenceProvider())
+    vscode.languages.registerReferenceProvider(documentSelector, new ClutterTagReferenceProvider())
   );
 
-  // Completion
+  // Completion.
   context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(ds, new ClutterTagCompletionItemProvider(), '#')
+    vscode.languages.registerCompletionItemProvider(documentSelector, new ClutterTagCompletionItemProvider(), '#')
   );
 
-  // Hover
+  // Flagr hover.
   context.subscriptions.push(
-    vscode.languages.registerHoverProvider(ds, {
+    vscode.languages.registerHoverProvider(documentSelector, {
       async provideHover(document, position, token) {
         const line = document.lineAt(position.line);
         const re = /\[#flagr:(.*)#\]/g;

@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import {BacklinkItem} from './BacklinkItem';
-import {Note} from './Note';
+import * as vscode from "vscode";
+import { BacklinkItem } from './BacklinkItem';
+import { Note } from './Note';
 
 export class AllTagsTreeDataProvider implements vscode.TreeDataProvider<BacklinkItem> {
 
@@ -19,8 +19,7 @@ export class AllTagsTreeDataProvider implements vscode.TreeDataProvider<Backlink
       return Promise.resolve((await Note.getDistictTagFullTextStrings()).map((label) => {
         return new BacklinkItem(label, vscode.TreeItemCollapsibleState.Expanded);
       }));
-    }
-    else {
+    } else {
       return Promise.resolve([]);
     }
   }
