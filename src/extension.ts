@@ -1,11 +1,10 @@
 import * as vscode from 'vscode';
-import {AllTagsTreeDataProvider} from './AllTagsTreeDataProvider';
-import {ClutterTagReferenceProvider} from './ClutterTagReferenceProvider';
-import {ClutterTagCompletionItemProvider} from './ClutterTagCompletionItemProvider';
-import {NoteWorkspace} from './NoteWorkspace';
-import {TagDataSource} from './TagDataSource';
-import {Note} from './Note';
+import { AllTagsTreeDataProvider } from './AllTagsTreeDataProvider';
+import { TagReferenceProvider } from './TagReferenceProvider';
+import { TagCompletionItemProvider } from './TagCompletionItemProvider';
+import { TagDataSource } from './TagDataSource';
 import * as got from 'got';
+import { Tag } from "./Tag";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -21,12 +20,12 @@ export function activate(context: vscode.ExtensionContext) {
 
   // References.
   context.subscriptions.push(
-    vscode.languages.registerReferenceProvider(documentSelector, new ClutterTagReferenceProvider())
+    vscode.languages.registerReferenceProvider(documentSelector, new TagReferenceProvider())
   );
 
   // Completion.
   context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(documentSelector, new ClutterTagCompletionItemProvider(), '#')
+    vscode.languages.registerCompletionItemProvider(documentSelector, new TagCompletionItemProvider(), '#')
   );
 
   // Flagr hover.
@@ -60,8 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Observe changes to a document.
   vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-    let parsed = Note.parseString(e.document.getText());
-    TagDataSource.registerTempRefs(e.document.uri.fsPath, parsed);
+    let parsed = TagDataSource.parseString(e.document.getText());
+    TagDataSource.registerTempTags(e.document.uri.fsPath, parsed);
     // Clear refs on save/delete.
     if (parsed.length > 0) {
       allTagsTreeDataProvider.reload();
@@ -69,7 +68,25 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // New note from selection command.
-  context.subscriptions.push(vscode.commands.registerCommand('clutter.newTagFromSelection', NoteWorkspace.newTagFromSelection));
+  context.subscriptions.push(vscode.commands.registerCommand('clutter.newTagFromSelection', function () {
+    const originEditor = vscode.window.activeTextEditor;
+
+    if (!originEditor) {
+      return;
+    }
+
+    const { selection } = originEditor;
+    const text = originEditor.document.getText(selection);
+    const originSelectionRange = new vscode.Range(selection.start, selection.end);
+
+    if (text === '') {
+      vscode.window.showErrorMessage('Error creating tag from selection: selection is empty.');
+    } else {
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(originEditor.document.uri, originSelectionRange, Tag.fullTextFromInnerText(text));
+      vscode.workspace.applyEdit(edit);
+    }
+  }));
 
   // Insert tag from tag tree view command.
   context.subscriptions.push(vscode.commands.registerCommand('clutter.insertTag', function (content: string) {

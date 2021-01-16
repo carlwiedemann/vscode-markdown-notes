@@ -1,14 +1,13 @@
 import { exec, ExecException } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Ref, RefType } from './Ref';
-import { NoteWorkspace } from './NoteWorkspace';
-import { RefCandidate } from './RefCandidate';
+import { TagInterface } from './TagInterface';
 import { Dictionary } from './Dictionary';
+import { Tag } from "./Tag";
 
 export class TagDataSource {
 
-  static tempRefs: Dictionary<Array<RefCandidate>> = {};
+  static tempTags: Dictionary<Array<TagInterface>> = {};
 
   static getProjectRootUri(): string {
     let folders = vscode.workspace.workspaceFolders;
@@ -50,7 +49,7 @@ export class TagDataSource {
     return '';
   }
 
-  static async getAllRefs(refToMatch?: Ref): Promise<Array<Ref>> {
+  static async getAllTags(refToMatch?: TagInterface): Promise<Array<TagInterface>> {
 
     let stdout = await TagDataSource.getRawTagData();
 
@@ -67,17 +66,14 @@ export class TagDataSource {
       lines = allLines;
     }
 
-    let refs: Array<Ref> = [];
+    let tags: Array<TagInterface> = [];
 
     lines.map((line) => {
       let match = line.match(/^(.+) (.+):(\d+)\.(\d+)$/);
       if (match) {
 
         let refText = match[1];
-        let fullText = NoteWorkspace.clutterTagFromText(refText);
-
-        // let localPath = match[2];
-        // let fullPath = path.join(rootUri, localPath);
+        let fullText = Tag.fullTextFromInnerText(refText);
 
         let line = parseInt(match[3]);
         let col = parseInt(match[4]);
@@ -87,42 +83,23 @@ export class TagDataSource {
           new vscode.Position(line - 1, col - 1 + fullText.length)
         );
 
-        refs.push({
-          type: RefType.Tag,
+        tags.push({
           fullText: fullText,
           innerText: refText,
-          hasExtension: false,
           range: range
         });
       }
     });
 
     // Also push temp refs.
-    let refKeys = Object.keys(TagDataSource.tempRefs);
-    refKeys.forEach((key) => {
-      let refsForFile = TagDataSource.tempRefs[key];
-      refsForFile.forEach((refCandidate) => {
-
-        let rawRange = refCandidate.rawRange;
-        let range = new vscode.Range(
-          new vscode.Position(rawRange.start.line, rawRange.start.col),
-          new vscode.Position(rawRange.end.line, rawRange.end.col)
-        );
-
-        refs.push({
-          type: RefType.Tag,
-          fullText: refCandidate.text,
-          innerText: NoteWorkspace.innerTextFromFullText(refCandidate.text),
-          hasExtension: false,
-          range: range
-        });
-      });
+    Object.keys(TagDataSource.tempTags).forEach((key) => {
+      tags = [...tags, ...(TagDataSource.tempTags[key])];
     });
 
-    return refs;
+    return tags;
   }
 
-  static async getAllRefLocations(refToMatch?: Ref): Promise<Array<vscode.Location>> {
+  static async getAllTagLocations(refToMatch?: TagInterface): Promise<Array<vscode.Location>> {
 
     let rootUri = TagDataSource.getProjectRootUri();
 
@@ -148,7 +125,7 @@ export class TagDataSource {
       if (match) {
 
         let refText = match[1];
-        let fullText = NoteWorkspace.clutterTagFromText(refText);
+        let fullText = Tag.fullTextFromInnerText(refText);
 
         let localPath = match[2];
         let fullPath = path.join(rootUri, localPath);
@@ -168,8 +145,34 @@ export class TagDataSource {
     return locations;
   }
 
-  static registerTempRefs(fsPath: string, refCandidates: Array<RefCandidate>) {
-    TagDataSource.tempRefs[fsPath] = refCandidates;
+  static registerTempTags(fsPath: string, tags: Array<TagInterface>) {
+    TagDataSource.tempTags[fsPath] = tags;
+  }
+
+  static async getDistinctTagFullTextStrings(): Promise<Array<string>> {
+    let tagSet = (await TagDataSource.getAllTags()).reduce((carry: Set<string>, tag: TagInterface): Set<string> => {
+      return carry.add(tag.fullText);
+    }, new Set());
+
+    return Array.from(tagSet);
+  }
+
+  static parseString(data: string): Array<TagInterface> {
+
+    let tags: Array<TagInterface> = [];
+
+    // don't debug on blank data, only null|undefined
+    if (data === '') {
+      return tags;
+    }
+
+    data.split(/\r?\n/).map((line, lineNum) => {
+      Array.from(line.matchAll(Tag.tagRegExp)).map((match) => {
+        tags.push(Tag.fromMatch(lineNum, match));
+      });
+    });
+
+    return tags;
   }
 
 }

@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
-import { isRefStart } from './Ref';
-import { NoteParser } from './NoteParser';
-import { Note } from './Note';
+import { TagDataSource } from "./TagDataSource";
+import { Tag } from "./Tag";
 
-export class ClutterTagCompletionItemProvider implements vscode.CompletionItemProvider {
+export class TagCompletionItemProvider implements vscode.CompletionItemProvider {
   public async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
 
-    const start = isRefStart(document, position);
+    const start = Tag.isTagStart(document, position);
 
     if (start) {
 
@@ -31,11 +30,10 @@ export class ClutterTagCompletionItemProvider implements vscode.CompletionItemPr
 
       let range = new vscode.Range(position.translate(0, -2), position.translate(0, endTranslate));
 
-      let strings = await Note.getDistictTagFullTextStrings();
+      let fullTexts = await TagDataSource.getDistinctTagFullTextStrings();
 
-      return strings.map((t) => {
-        let label = `${t}`; // cast to a string
-        let item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Snippet);
+      return fullTexts.map((fullText) => {
+        let item = new vscode.CompletionItem(fullText, vscode.CompletionItemKind.Snippet);
         item.range = range;
 
         return item;

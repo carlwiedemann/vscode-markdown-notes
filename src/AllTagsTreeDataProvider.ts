@@ -1,23 +1,25 @@
 import * as vscode from "vscode";
-import { BacklinkItem } from './BacklinkItem';
-import { Note } from './Note';
+import { TagTreeItem } from './TagTreeItem';
+import { TagDataSource } from "./TagDataSource";
 
-export class AllTagsTreeDataProvider implements vscode.TreeDataProvider<BacklinkItem> {
+export class AllTagsTreeDataProvider implements vscode.TreeDataProvider<TagTreeItem> {
 
-  onDidChangeTreeData: vscode.Event<BacklinkItem> = (new vscode.EventEmitter<BacklinkItem>()).event;
+  private eventEmitter: vscode.EventEmitter<TagTreeItem> = (new vscode.EventEmitter<TagTreeItem>());
+
+  onDidChangeTreeData: vscode.Event<TagTreeItem> = this.eventEmitter.event;
 
   reload(): void {
-    (new vscode.EventEmitter<BacklinkItem>()).fire();
+    this.eventEmitter.fire();
   }
 
-  getTreeItem(element: BacklinkItem): vscode.TreeItem {
+  getTreeItem(element: TagTreeItem): vscode.TreeItem {
     return element;
   }
 
-  async getChildren(element?: BacklinkItem): Promise<BacklinkItem[]> {
+  async getChildren(element?: TagTreeItem): Promise<TagTreeItem[]> {
     if (!element) {
-      return Promise.resolve((await Note.getDistictTagFullTextStrings()).map((label) => {
-        return new BacklinkItem(label, vscode.TreeItemCollapsibleState.Expanded);
+      return Promise.resolve((await TagDataSource.getDistinctTagFullTextStrings()).map((label) => {
+        return new TagTreeItem(label, vscode.TreeItemCollapsibleState.Expanded);
       }));
     } else {
       return Promise.resolve([]);
