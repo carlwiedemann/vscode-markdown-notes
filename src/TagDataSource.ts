@@ -2,12 +2,12 @@ import { exec, ExecException } from 'child_process';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { TagInterface } from './TagInterface';
-import { Dictionary } from './Dictionary';
+import { DictionaryInterface } from './DictionaryInterface';
 import { Tag } from "./Tag";
 
 export class TagDataSource {
 
-  static tempTags: Dictionary<Array<TagInterface>> = {};
+  static tempTags: DictionaryInterface<Array<TagInterface>> = {};
 
   static getProjectRootUri(): string {
     let folders = vscode.workspace.workspaceFolders;
@@ -49,6 +49,7 @@ export class TagDataSource {
     return '';
   }
 
+  // @todo Dedupe with below.
   static async getAllTags(refToMatch?: TagInterface): Promise<Array<TagInterface>> {
 
     let stdout = await TagDataSource.getRawTagData();
@@ -99,6 +100,7 @@ export class TagDataSource {
     return tags;
   }
 
+  // @todo Dedupe with above.
   static async getAllTagLocations(refToMatch?: TagInterface): Promise<Array<vscode.Location>> {
 
     let rootUri = TagDataSource.getProjectRootUri();
@@ -157,6 +159,8 @@ export class TagDataSource {
     return Array.from(tagSet);
   }
 
+  // @todo deprecate in favor of CLI integration.
+  // @see https://github.com/cluttercode/clutter/issues/1
   static parseString(data: string): Array<TagInterface> {
 
     let tags: Array<TagInterface> = [];

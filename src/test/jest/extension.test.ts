@@ -3,42 +3,24 @@ import { Tag } from "../../Tag";
 
 describe('Tag.innerTextFromFullText', () => {
 
-  it('converts as expected', () => {
+  it('converts full text as expected', () => {
 
-    const fullText = 'hello';
+    const fullText = '[#hello#]';
+    const expected = 'hello';
 
-    const content = Tag.innerTextFromFullText(fullText);
+    const actual = Tag.innerTextFromFullText(fullText);
 
-    expect(content).toBe('[#hello#]');
+    expect(actual).toBe(expected);
   });
 
-  // it('handles escaped newlines', () => {
-  //   const template = '# Title\\n\\nContent';
-  //
-  //   const content = newNote(template, 'nevermind');
-  //
-  //   expect(content).toBe('# Title\n\nContent');
-  // });
-  //
-  // it('handles timestamp', () => {
-  //   const template = '# Title\n\nCreated: ${timestamp}\n';
-  //
-  //   const content = newNote(template, 'nevermind');
-  //   const regex = /# Title\n\nCreated: (.*)\n/;
-  //
-  //   expect(content).toMatch(regex);
-  //   const matches = regex.exec(content);
-  //   const date1 = Date.parse(matches![1]);
-  //   expect(date1).not.toBe(Number.NaN);
-  // });
-  //
-  // it('handles date', () => {
-  //   const template = '# Title\nDate: ${date}\n';
-  //
-  //   const content = newNote(template, 'nevermind');
-  //   const d = (new Date().toISOString().match(/(\d{4}-\d{2}-\d{2})/) || '')[0];
-  //   const dt = `Date: ${d}`;
-  //   expect(content.includes(dt)).toBeTruthy();
-  // });
-});
+  it('converts inner text as expected', () => {
 
+    const innerText = 'hello';
+    const expected = '[#hello#]';
+
+    const actual = Tag.fullTextFromInnerText(innerText);
+
+    expect(actual).toBe(expected);
+  });
+
+});
