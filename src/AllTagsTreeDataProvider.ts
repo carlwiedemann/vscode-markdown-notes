@@ -4,9 +4,9 @@ import { TagDataSource } from "./TagDataSource";
 
 export class AllTagsTreeDataProvider implements vscode.TreeDataProvider<TagTreeItem> {
 
-  private eventEmitter: vscode.EventEmitter<TagTreeItem> = (new vscode.EventEmitter<TagTreeItem>());
+  private eventEmitter: vscode.EventEmitter<void> = (new vscode.EventEmitter<void>());
 
-  onDidChangeTreeData: vscode.Event<TagTreeItem> = this.eventEmitter.event;
+  onDidChangeTreeData: vscode.Event<void> = this.eventEmitter.event;
 
   reload(): void {
     this.eventEmitter.fire();

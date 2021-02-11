@@ -29,6 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Flagr hover.
+  // @todo How to extract/isolate this?
   context.subscriptions.push(
     vscode.languages.registerHoverProvider(documentSelector, {
       async provideHover(document, position, token) {
@@ -67,7 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // New note from selection command.
+  // New tag from selection command.
   context.subscriptions.push(vscode.commands.registerCommand('clutter.newTagFromSelection', function () {
     const originEditor = vscode.window.activeTextEditor;
 
@@ -99,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
   }));
 
   // Tag tree view.
-  vscode.window.createTreeView('vscodeMarkdownNotesBacklinks', {
+  vscode.window.createTreeView('vscodeClutterAllTags', {
     treeDataProvider: allTagsTreeDataProvider,
   });
   vscode.window.onDidChangeActiveTextEditor(() => {

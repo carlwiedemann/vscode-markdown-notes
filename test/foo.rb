@@ -2,6 +2,7 @@
 
 # Ok here is some rb
 
+# [#hello#]
 def foo
   puts 'hello world'
 end
